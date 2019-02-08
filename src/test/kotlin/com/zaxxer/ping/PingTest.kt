@@ -75,7 +75,8 @@ class PingTest {
 
       val pingTargets = arrayOf(
          PingTarget(InetAddress.getByName("8.8.8.8")),
-         PingTarget(InetAddress.getByName("youtube.com"))
+         PingTarget(InetAddress.getByName("youtube.com")),
+         PingTarget(InetAddress.getByName("fe80::18e1:317:51c:5db0"))
       )
 
       for (i in 0..(10 * pingTargets.size)) {

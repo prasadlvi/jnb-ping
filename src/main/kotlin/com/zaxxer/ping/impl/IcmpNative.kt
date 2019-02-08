@@ -37,6 +37,7 @@ import jnr.posix.POSIX
 import jnr.posix.POSIXFactory
 import jnr.posix.Timeval
 import java.net.Inet4Address
+import java.net.Inet6Address
 import java.nio.ByteBuffer
 
 internal class NativeStatic {
@@ -67,16 +68,23 @@ class BSDSockAddr4(address:Inet4Address) : SockAddr() {
    }
 }
 
-class BSDSockAddr6:SockAddr6() {
+class BSDSockAddr6(address: Inet6Address):SockAddr6() {
    @field:JvmField val sin_len = Unsigned8()
-   @field:JvmField val sin_family = Unsigned8()
-   @field:JvmField val sin_port = Unsigned16()
-   @field:JvmField val flowinfo = Unsigned32()
-   @field:JvmField val sin_addr:Array<out Unsigned8> = array(Array(4, {Unsigned8()}))
+   @field:JvmField val sin6_family = Unsigned8()
+   @field:JvmField val sin6_port = Unsigned16()
+   @field:JvmField val sin6_flowinfo = Unsigned32()
+   @field:JvmField val sin6_addr:Array<out Unsigned8> = Array(16, {Unsigned8()})
    @field:JvmField val sin_scope_id = Unsigned32()
 
    init {
-      sin_family.set(PF_INET6)
+      sin6_family.set(PF_INET6)
+      val bytes = address.address
+      for(index in 0..15) {
+         val value = bytes[index].toInt() and 0xff
+         sin6_addr[index].set(value)
+      }
+      sin_scope_id.set(8) // Set interface to en0
+//      sin_scope_id.set(1) // Set interface to lo0
    }
 }
 
@@ -115,7 +123,9 @@ val IPPROTO_ICMP = 1
 val IPPROTO_ICMPV6 = 58
 
 val ICMP_ECHO = 8.toShort()
+val ICMPV6_ECHO_REQUEST = 128.toShort()
 val ICMP_ECHOREPLY = 0.toShort()
+val ICMPV6_ECHO_REPLY = 129.toShort()
 
 val SOL_SOCKET = if (isBSD) 0xffff else 1
 
@@ -339,6 +349,16 @@ class Icmp:Struct(runtime) {
    // union {
    val icmp_dun:Dun = inner(Dun())
    // } icmp_dun
+}
+
+class Icmp6:Struct(runtime) {
+   // u_char	icmp_type;		/* type of message, see below */
+   // u_char	icmp_code;		/* type sub code */
+   // u_short	icmpCksum;		/* ones complement cksum of struct */
+   val icmp6_type = Unsigned8()
+   val icmp6_code = Unsigned8()
+   val icmp6_cksum = Unsigned16()
+   val icmp6_un_data32 = Unsigned32()
 }
 
 // See https://opensource.apple.com/source/network_cmds/network_cmds-329.2/ping.tproj/ping.c
