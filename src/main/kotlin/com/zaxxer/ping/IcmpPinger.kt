@@ -114,6 +114,8 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
    private lateinit var outpacketPointer:Pointer
 
    private lateinit var icmp:Icmp
+   private lateinit var icmp6:Icmp6
+   private lateinit var icmp6_node_info:Icmp6NodeInfo
    private lateinit var recvIp:Ip
    private lateinit var msgHdr:MsgHdr
 
@@ -305,6 +307,8 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
       icmp.icmp_hun.ih_idseq.icd_seq.set(htons(pingTarget.sequence))
       icmp.icmp_hun.ih_idseq.icd_id.set(htons(pingTarget.id))
 
+      println("Send sequence : " + pingTarget.sequence)
+
       if(pingTarget.isIPv4) {
          icmp.icmp_type.set(ICMP_ECHO)
       } else {
@@ -340,22 +344,44 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
       var cc = posix.recvmsg(fd, msgHdr, 0)
       if (cc > 0) {
-         LOGGER.finest({dumpBuffer("Ping response", socketBuffer)})
+//         LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
 
          val headerLen= if (isBSD) (recvIp.ip_vhl.get().toInt() and 0x0f shl 2) else 0
          cc -= headerLen
 
          icmp.useMemory(socketBufferPointer.slice(headerLen.toLong()))
 
-         if (icmp.icmp_type.get() != ICMP_ECHOREPLY && recvIp.ip_vhl.get() != ICMPV6_ECHO_REPLY) {
+         icmp6.useMemory(socketBufferPointer)
+
+         icmp6_node_info.useMemory(socketBufferPointer)
+
+         if (icmp.icmp_type.get() != ICMP_ECHOREPLY && icmp6.icmp6_type.get() != ICMPV6_ECHO_REPLY) {
             LOGGER.fine({"   ^ Opps, not our response."})
          }
          else {
             val seq = if(icmp.icmp_type.get() == ICMP_ECHOREPLY) {
                ntohs(icmp.icmp_hun.ih_idseq.icd_seq.shortValue())
             } else {
-               ntohs(recvIp.ip_off.shortValue())
+               ntohs(icmp6_node_info.icmp6_ni_nonce[0].get().toShort())
             }
+            LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
+
+            println("Size icmp6 : ${Struct.size(icmp6)}")
+            println("icmp6_type : ${icmp6.icmp6_type.get()}")
+            println("icmp6_code : ${icmp6.icmp6_code.get()}")
+            println("icmp6_cksum : ${icmp6.icmp6_cksum.get()}")
+
+            println("seq : " + seq)
+            println("seq1 : " + ntohs(icmp6_node_info.icmp6_ni_nonce[0].get().toShort()))
+            println("seq2 : " + icmp6_node_info.icmp6_ni_nonce[1].get())
+            println("seq3 : " + icmp6_node_info.icmp6_ni_nonce[2].get())
+            println("seq4 : " + icmp6_node_info.icmp6_ni_nonce[3].get())
+//            println("seq5 : " + icmp6_node_info.icmp6_ni_nonce[4].get())
+//            println("seq6 : " + icmp6_node_info.icmp6_ni_nonce[5].get())
+//            println("seq7 : " + icmp6_node_info.icmp6_ni_nonce[6].get())
+//            println("seq8 : " + icmp6_node_info.icmp6_ni_nonce[7].get())
+
+            println("correct sequence : " + ntohs(recvIp.ip_off.shortValue()))
 
             waitingTarget4Map
                .remove(seq)
@@ -449,6 +475,9 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
       icmp = Icmp()
       icmp.useMemory(outpacketPointer)
+
+      icmp6 = Icmp6()
+      icmp6_node_info = Icmp6NodeInfo()
 
       recvIp = Ip()
       recvIp.useMemory(socketBufferPointer)
