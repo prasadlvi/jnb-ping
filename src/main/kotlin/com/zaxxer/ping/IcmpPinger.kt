@@ -114,7 +114,6 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
    private lateinit var outpacketPointer:Pointer
 
    private lateinit var icmp:Icmp
-   private lateinit var icmp6:Icmp6
    private lateinit var recvIp:Ip
    private lateinit var msgHdr:MsgHdr
 
@@ -257,8 +256,6 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
             }
          }
          else {
-            println("Failed")
-            System.exit(1)
             pendingPings.take()
             responseHandler.onTimeout(pingTarget)
             break
@@ -307,8 +304,6 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
       icmp.useMemory(outpacketPointer)
       icmp.icmp_hun.ih_idseq.icd_seq.set(htons(pingTarget.sequence))
       icmp.icmp_hun.ih_idseq.icd_id.set(htons(pingTarget.id))
-
-      println("send sequence : " + htons(icmp.icmp_hun.ih_idseq.icd_seq.get().toShort()))
 
       if(pingTarget.isIPv4) {
          icmp.icmp_type.set(ICMP_ECHO)
@@ -361,9 +356,6 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
             } else {
                ntohs(recvIp.ip_off.shortValue())
             }
-
-            println("Receive Sequence : $seq")
-            println()
 
             waitingTarget4Map
                .remove(seq)

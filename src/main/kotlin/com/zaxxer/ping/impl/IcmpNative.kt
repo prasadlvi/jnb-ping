@@ -84,7 +84,6 @@ class BSDSockAddr6(address: Inet6Address):SockAddr6() {
          sin6_addr[index].set(value)
       }
       sin_scope_id.set(8) // Set interface to en0
-//      sin_scope_id.set(1) // Set interface to lo0
    }
 }
 
@@ -349,16 +348,6 @@ class Icmp:Struct(runtime) {
    // union {
    val icmp_dun:Dun = inner(Dun())
    // } icmp_dun
-}
-
-class Icmp6:Struct(runtime) {
-   // u_char	icmp_type;		/* type of message, see below */
-   // u_char	icmp_code;		/* type sub code */
-   // u_short	icmpCksum;		/* ones complement cksum of struct */
-   val icmp6_type = Unsigned8()
-   val icmp6_code = Unsigned8()
-   val icmp6_cksum = Unsigned16()
-   val icmp6_un_data32 = Unsigned32()
 }
 
 // See https://opensource.apple.com/source/network_cmds/network_cmds-329.2/ping.tproj/ping.c
