@@ -366,13 +366,13 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
                   responseHandler.onResponse(pingTarget, triptime, cc, seq.toInt())
                }
             waitingTarget6Map
-                  .remove(seq)
-                  ?.let { pingTarget ->
-                     val elapsedus = NANOSECONDS.toMicros(nanoTime() - pingTarget.timestampNs)
-                     val triptime = elapsedus.toDouble() / 1_000_000.0
+               .remove(seq)
+               ?.let { pingTarget ->
+                  val elapsedus = NANOSECONDS.toMicros(nanoTime() - pingTarget.timestampNs)
+                  val triptime = elapsedus.toDouble() / 1_000_000.0
 
-                     responseHandler.onResponse(pingTarget, triptime, cc, seq.toInt())
-                  }
+                  responseHandler.onResponse(pingTarget, triptime, cc, seq.toInt())
+            }
          }
       }
       else {
