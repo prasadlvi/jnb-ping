@@ -356,16 +356,39 @@ class Icmp6:Struct(runtime) {
    // u_short	icmpCksum;		/* ones complement cksum of struct */
    val icmp6_type = Unsigned8()
    val icmp6_code = Unsigned8()
-   val icmp6_cksum = Unsigned16()
-   val identifier = Unsigned8()
-   val sequence = Unsigned8()
-   val dummy = Unsigned16()
+   val icmp6_cksum = Unsigned8()
+   val icmp6_dataun:Icmp6UnData = inner(Icmp6UnData())
+}
+
+class Icmp6UnData:Union(runtime) {
+//   val icmp6_un_data32 = Array(1, {Unsigned32()})
+   val icmp6_un_data16 = Array(1, {Unsigned16()})
+   val icmp6_un_data8 = Array(1, {Unsigned8()})
 }
 
 class Icmp6NodeInfo:Struct(runtime) {
-   val icmp6_hdr = Icmp6()
+   val icmp6 = inner(Icmp6())
    val icmp6_ni_nonce = Array(4, {Unsigned16()})
 }
+
+
+//class Icmp6NodeInfo:Struct(runtime) {
+//   val ip_vhl = Unsigned8()
+//   val ip_tos = Unsigned8()
+//   val ip_len = Unsigned16()
+//   val ip_id = Unsigned16()
+//   val icmp6_ni_nonce = Array(4, {Unsigned16()})
+//}
+
+//val ip_vhl = Unsigned8()
+//// u_char	ip_tos;			/* type of service */
+//// u_short	ip_len;			/* total length */
+//// u_short	ip_id;			/* identification */
+//// u_short	ip_off;			/* fragment offset field */
+//val ip_tos = Unsigned8()
+//val ip_len = Unsigned16()
+//val ip_id = Unsigned16()
+//val ip_off = Unsigned16()
 
 //struct icmp6_hdr {
 //   u_int8_t icmp6_type;    /* type field */

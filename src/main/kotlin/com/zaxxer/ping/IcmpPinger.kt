@@ -349,6 +349,8 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
          val headerLen= if (isBSD) (recvIp.ip_vhl.get().toInt() and 0x0f shl 2) else 0
          cc -= headerLen
 
+         println("headerlen : $headerLen")
+
          icmp.useMemory(socketBufferPointer.slice(headerLen.toLong()))
 
          icmp6.useMemory(socketBufferPointer)
@@ -362,26 +364,23 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
             val seq = if(icmp.icmp_type.get() == ICMP_ECHOREPLY) {
                ntohs(icmp.icmp_hun.ih_idseq.icd_seq.shortValue())
             } else {
-               ntohs(icmp6_node_info.icmp6_ni_nonce[0].get().toShort())
+               ntohs(recvIp.ip_off.shortValue())
             }
-            LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
+//            LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
 
-            println("Size icmp6 : ${Struct.size(icmp6)}")
+            println("Size icmp6 : ${Struct.size(Icmp6())}")
+            println("Size Icmp6NodeInfo : ${Struct.size(Icmp6NodeInfo())}")
             println("icmp6_type : ${icmp6.icmp6_type.get()}")
-            println("icmp6_code : ${icmp6.icmp6_code.get()}")
-            println("icmp6_cksum : ${icmp6.icmp6_cksum.get()}")
 
-            println("seq : " + seq)
-            println("seq1 : " + ntohs(icmp6_node_info.icmp6_ni_nonce[0].get().toShort()))
-            println("seq2 : " + icmp6_node_info.icmp6_ni_nonce[1].get())
-            println("seq3 : " + icmp6_node_info.icmp6_ni_nonce[2].get())
-            println("seq4 : " + icmp6_node_info.icmp6_ni_nonce[3].get())
-//            println("seq5 : " + icmp6_node_info.icmp6_ni_nonce[4].get())
-//            println("seq6 : " + icmp6_node_info.icmp6_ni_nonce[5].get())
-//            println("seq7 : " + icmp6_node_info.icmp6_ni_nonce[6].get())
-//            println("seq8 : " + icmp6_node_info.icmp6_ni_nonce[7].get())
+            println("offset nonce : ${icmp6_node_info.icmp6_ni_nonce[0].offset()}")
 
-            println("correct sequence : " + ntohs(recvIp.ip_off.shortValue()))
+//            println("seq : " + seq)
+            println()
+            println("seq1 : " + ntohs(icmp6_node_info.icmp6_ni_nonce[0].shortValue()))
+            println("seq1 : " + ntohs(recvIp.ip_off.shortValue()))
+
+
+            println()
 
             waitingTarget4Map
                .remove(seq)
