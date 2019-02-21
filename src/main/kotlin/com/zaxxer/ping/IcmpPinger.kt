@@ -307,7 +307,7 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
       icmp.icmp_hun.ih_idseq.icd_seq.set(htons(pingTarget.sequence))
       icmp.icmp_hun.ih_idseq.icd_id.set(htons(pingTarget.id))
 
-      println("Send sequence : " + pingTarget.sequence)
+      println("Send sequence : " + htons(pingTarget.sequence).toUShort())
 
       if(pingTarget.isIPv4) {
          icmp.icmp_type.set(ICMP_ECHO)
@@ -376,8 +376,8 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
 //            println("seq : " + seq)
             println()
-            println("seq1 : " + ntohs(icmp6_node_info.icmp6_ni_nonce[0].shortValue()))
-            println("seq1 : " + ntohs(recvIp.ip_off.shortValue()))
+            println("seq1 : " + icmp6_node_info.icmp6_ni_nonce[0].shortValue().toUShort())
+//            println("seq1 : " + recvIp.ip_off.shortValue())
 
 
             println()

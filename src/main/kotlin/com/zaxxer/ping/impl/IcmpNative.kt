@@ -356,14 +356,14 @@ class Icmp6:Struct(runtime) {
    // u_short	icmpCksum;		/* ones complement cksum of struct */
    val icmp6_type = Unsigned8()
    val icmp6_code = Unsigned8()
-   val icmp6_cksum = Unsigned8()
+   val icmp6_cksum = Unsigned16()
    val icmp6_dataun:Icmp6UnData = inner(Icmp6UnData())
 }
 
 class Icmp6UnData:Union(runtime) {
 //   val icmp6_un_data32 = Array(1, {Unsigned32()})
-   val icmp6_un_data16 = Array(1, {Unsigned16()})
-   val icmp6_un_data8 = Array(1, {Unsigned8()})
+   val icmp6_un_data16 = Array(2, {Unsigned16()})
+   val icmp6_un_data8 = Array(4, {Unsigned8()})
 }
 
 class Icmp6NodeInfo:Struct(runtime) {
