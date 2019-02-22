@@ -302,26 +302,28 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
       pingTarget.sequence = (SEQUENCE_SEQUENCE.getAndIncrement() % 0xffff).toShort()
 
-      icmp.useMemory(outpacketPointer)
-      icmp.icmp_hun.ih_idseq.icd_seq.set(htons(pingTarget.sequence))
-      icmp.icmp_hun.ih_idseq.icd_id.set(htons(pingTarget.id))
-
-      println("Send sequence : " + htons(pingTarget.sequence).toUShort())
-
       if(pingTarget.isIPv4) {
+         icmp.useMemory(outpacketPointer)
+         icmp.icmp_hun.ih_idseq.icd_seq.set(htons(pingTarget.sequence))
+         icmp.icmp_hun.ih_idseq.icd_id.set(htons(pingTarget.id))
          icmp.icmp_type.set(ICMP_ECHO)
+         icmp.icmp_code.set(0)
+         icmp.icmp_cksum.set(0)
+         // In BSD we are responsible for the entire payload, including checksum.  Linux mucks with the payload (replacing
+         // the identity field, and therefore recalculates the checksum (so don't waste our time doing it here).
+         if (isBSD) {
+            val cksum = icmpCksum(outpacketPointer, SEND_PACKET_SIZE)
+            icmp.icmp_cksum.set(cksum)
+         }
       } else {
-         icmp.icmp_type.set(ICMPV6_ECHO_REQUEST)
-      }
-
-      icmp.icmp_code.set(0)
-      icmp.icmp_cksum.set(0)
-
-      // In BSD we are responsible for the entire payload, including checksum.  Linux mucks with the payload (replacing
-      // the identity field, and therefore recalculates the checksum (so don't waste our time doing it here).
-      if (isBSD) {
-         val cksum = icmpCksum(outpacketPointer, SEND_PACKET_SIZE)
-         icmp.icmp_cksum.set(htons(cksum.toShort()))
+         icmp6.useMemory(outpacketPointer)
+         icmp6.icmp6_dataun.icmp6_un_data32[0].set(htons(pingTarget.sequence))
+         icmp6.icmp6_type.set(ICMPV6_ECHO_REQUEST)
+         icmp6.icmp6_code.set(0)
+         if (isBSD) {
+            val cksum = icmpCksum(outpacketPointer, SEND_PACKET_SIZE)
+            icmp6.icmp6_cksum.set(cksum)
+         }
       }
 
       LOGGER.finest({dumpBuffer(message = "Send buffer:", buffer = socketBuffer)})
@@ -343,12 +345,10 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
       var cc = posix.recvmsg(fd, msgHdr, 0)
       if (cc > 0) {
-//         LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
+         LOGGER.finest({dumpBuffer("Ping response", socketBuffer)})
 
          val headerLen= if (isBSD) (recvIp.ip_vhl.get().toInt() and 0x0f shl 2) else 0
          cc -= headerLen
-
-         println("headerlen : $headerLen")
 
          icmp.useMemory(socketBufferPointer.slice(headerLen.toLong()))
 
@@ -363,11 +363,6 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
             } else {
                ntohs(icmp6.icmp6_dataun.icmp6_un_data32[0].shortValue())
             }
-
-            println("icmp6_type : ${icmp6.icmp6_type.get()}")
-            println()
-            println("seq1 : " + icmp6.icmp6_dataun.icmp6_un_data32[0].shortValue().toUShort())
-            println()
 
             waitingTarget4Map
                .remove(seq)
