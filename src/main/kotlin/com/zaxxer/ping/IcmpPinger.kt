@@ -313,16 +313,17 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
          // the identity field, and therefore recalculates the checksum (so don't waste our time doing it here).
          if (isBSD) {
             val cksum = icmpCksum(outpacketPointer, SEND_PACKET_SIZE)
-            icmp.icmp_cksum.set(cksum)
+            icmp.icmp_cksum.set(htons(cksum.toShort()))
          }
       } else {
          icmp6.useMemory(outpacketPointer)
          icmp6.icmp6_dataun.icmp6_un_data32[0].set(htons(pingTarget.sequence))
          icmp6.icmp6_type.set(ICMPV6_ECHO_REQUEST)
          icmp6.icmp6_code.set(0)
+         icmp6.icmp6_cksum.set(0)
          if (isBSD) {
             val cksum = icmpCksum(outpacketPointer, SEND_PACKET_SIZE)
-            icmp6.icmp6_cksum.set(cksum)
+            icmp6.icmp6_cksum.set(5)
          }
       }
 

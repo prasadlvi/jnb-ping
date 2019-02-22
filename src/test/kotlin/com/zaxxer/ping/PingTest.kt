@@ -79,9 +79,10 @@ class PingTest {
          PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b"))
       )
 
-      pinger.ping(PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b")))
+//      pinger.ping(PingTarget(InetAddress.getByName("8.8.8.8")))
+//      pinger.ping(PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b")))
 //      pinger.ping(PingTarget(InetAddress.getByName("2001:4860:4860::8888")))
-/*
+
       for (i in 0..(10 * pingTargets.size)) {
          if (!semaphore.tryAcquire()) {
             println("$i: Blocking on semaphore.acquire()")
@@ -92,7 +93,7 @@ class PingTest {
          println("$i: Calling pinger.ping(${pingTargets[i % pingTargets.size].inetAddress})")
          pinger.ping(pingTargets[i % pingTargets.size])
       }
-*/
+
       while (pinger.isPendingWork()) Thread.sleep(500)
 
       pinger.stopSelector()
