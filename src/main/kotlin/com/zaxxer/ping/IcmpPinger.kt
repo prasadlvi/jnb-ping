@@ -115,7 +115,7 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
    private lateinit var icmp:Icmp
    private lateinit var icmp6:Icmp6
-   private lateinit var icmp6_node_info:Icmp6NodeInfo
+//   private lateinit var icmp6_node_info:Icmp6NodeInfo
    private lateinit var recvIp:Ip
    private lateinit var msgHdr:MsgHdr
 
@@ -355,7 +355,7 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
 
          icmp6.useMemory(socketBufferPointer)
 
-         icmp6_node_info.useMemory(socketBufferPointer)
+//         icmp6_node_info.useMemory(socketBufferPointer)
 
          if (icmp.icmp_type.get() != ICMP_ECHOREPLY && icmp6.icmp6_type.get() != ICMPV6_ECHO_REPLY) {
             LOGGER.fine({"   ^ Opps, not our response."})
@@ -364,19 +364,19 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
             val seq = if(icmp.icmp_type.get() == ICMP_ECHOREPLY) {
                ntohs(icmp.icmp_hun.ih_idseq.icd_seq.shortValue())
             } else {
-               ntohs(recvIp.ip_off.shortValue())
+               ntohs(icmp6.icmp6_dataun.icmp6_un_data32[0].shortValue())
             }
 //            LOGGER.info({dumpBuffer("Ping response", socketBuffer)})
 
             println("Size icmp6 : ${Struct.size(Icmp6())}")
-            println("Size Icmp6NodeInfo : ${Struct.size(Icmp6NodeInfo())}")
+//            println("Size Icmp6NodeInfo : ${Struct.size(Icmp6NodeInfo())}")
             println("icmp6_type : ${icmp6.icmp6_type.get()}")
 
-            println("offset nonce : ${icmp6_node_info.icmp6_ni_nonce[0].offset()}")
+//            println("offset nonce : ${icmp6_node_info.icmp6_ni_nonce[0].offset()}")
 
 //            println("seq : " + seq)
             println()
-            println("seq1 : " + icmp6_node_info.icmp6_ni_nonce[0].shortValue().toUShort())
+            println("seq1 : " + icmp6.icmp6_dataun.icmp6_un_data32[0].shortValue().toUShort())
 //            println("seq1 : " + recvIp.ip_off.shortValue())
 
 
@@ -476,7 +476,7 @@ class IcmpPinger(private val responseHandler:PingResponseHandler) {
       icmp.useMemory(outpacketPointer)
 
       icmp6 = Icmp6()
-      icmp6_node_info = Icmp6NodeInfo()
+//      icmp6_node_info = Icmp6NodeInfo()
 
       recvIp = Ip()
       recvIp.useMemory(socketBufferPointer)
