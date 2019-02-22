@@ -79,8 +79,8 @@ class PingTest {
          PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b"))
       )
 
-//      pinger.ping(PingTarget(InetAddress.getByName("fe80::18e1:317:51c:5db0")))
-      pinger.ping(PingTarget(InetAddress.getByName("2001:4860:4860::8888")))
+      pinger.ping(PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b")))
+//      pinger.ping(PingTarget(InetAddress.getByName("2001:4860:4860::8888")))
 /*
       for (i in 0..(10 * pingTargets.size)) {
          if (!semaphore.tryAcquire()) {

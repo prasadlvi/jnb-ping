@@ -350,6 +350,10 @@ class Icmp:Struct(runtime) {
    // } icmp_dun
 }
 
+///**
+// * Structure of an icmp6 header
+// */
+//struct icmp6_hdr {
 class Icmp6:Struct(runtime) {
    // u_char	icmp_type;		/* type of message, see below */
    // u_char	icmp_code;		/* type sub code */
@@ -357,56 +361,20 @@ class Icmp6:Struct(runtime) {
    val icmp6_type = Unsigned8()
    val icmp6_code = Unsigned8()
    val icmp6_cksum = Unsigned16()
+   // union {
    val icmp6_dataun:Icmp6UnData = inner(Icmp6UnData())
+   // } icmp6_dataun;
 }
 
+//union {
 class Icmp6UnData:Union(runtime) {
-//   val icmp6_un_data32 = Array(1, {Unsigned32()})
+   // u_int32_t icmp6_un_data32[1]; /* type-specific field */
+   // u_int16_t icmp6_un_data16[2]; /* type-specific field */
+   // u_int8_t icmp6_un_data8[4];  /* type-specific field */
+   val icmp6_un_data32 = Array(1, {Unsigned32()})
    val icmp6_un_data16 = Array(2, {Unsigned16()})
    val icmp6_un_data8 = Array(4, {Unsigned8()})
-}
-
-class Icmp6NodeInfo:Struct(runtime) {
-   val icmp6 = inner(Icmp6())
-   val icmp6_ni_nonce = Array(4, {Unsigned16()})
-}
-
-
-//class Icmp6NodeInfo:Struct(runtime) {
-//   val ip_vhl = Unsigned8()
-//   val ip_tos = Unsigned8()
-//   val ip_len = Unsigned16()
-//   val ip_id = Unsigned16()
-//   val icmp6_ni_nonce = Array(4, {Unsigned16()})
-//}
-
-//val ip_vhl = Unsigned8()
-//// u_char	ip_tos;			/* type of service */
-//// u_short	ip_len;			/* total length */
-//// u_short	ip_id;			/* identification */
-//// u_short	ip_off;			/* fragment offset field */
-//val ip_tos = Unsigned8()
-//val ip_len = Unsigned16()
-//val ip_id = Unsigned16()
-//val ip_off = Unsigned16()
-
-//struct icmp6_hdr {
-//   u_int8_t icmp6_type;    /* type field */
-//   u_int8_t icmp6_code;    /* code field */
-//   u_int16_t icmp6_cksum;    /* checksum field */
-//   union {
-//      u_int32_t icmp6_un_data32[1]; /* type-specific field */
-//      u_int16_t icmp6_un_data16[2]; /* type-specific field */
-//      u_int8_t icmp6_un_data8[4];  /* type-specific field */
-//   } icmp6_dataun;
-//} __attribute__((__packed__));
-
-
-//struct icmp6_nodeinfo {
-//   struct icmp6_hdr icmp6_ni_hdr;
-//   u_int8_t icmp6_ni_nonce[8];
-//   /* could be followed by reply data */
-//}__attribute__((__packed__));
+} //} icmp6_dataun;
 
 // See https://opensource.apple.com/source/network_cmds/network_cmds-329.2/ping.tproj/ping.c
 fun icmpCksum(buf:Pointer, len:Int) : Int {
