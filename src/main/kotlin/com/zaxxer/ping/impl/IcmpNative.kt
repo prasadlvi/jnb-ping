@@ -23,6 +23,7 @@
 package com.zaxxer.ping.impl
 
 import com.zaxxer.ping.impl.NativeStatic.Companion.isBSD
+import com.zaxxer.ping.impl.NativeStatic.Companion.libc
 import com.zaxxer.ping.impl.NativeStatic.Companion.runtime
 import jnr.constants.platform.AddressFamily.AF_INET
 import jnr.constants.platform.AddressFamily.AF_INET6
@@ -74,7 +75,7 @@ class BSDSockAddr6(address: Inet6Address):SockAddr6() {
    @field:JvmField val sin6_port = Unsigned16()
    @field:JvmField val sin6_flowinfo = Unsigned32()
    @field:JvmField val sin6_addr:Array<out Unsigned8> = Array(16, {Unsigned8()})
-   @field:JvmField val sin_scope_id = Unsigned32()
+   @field:JvmField val sin6_scope_id = Unsigned32()
 
    init {
       sin6_family.set(PF_INET6)
@@ -83,7 +84,7 @@ class BSDSockAddr6(address: Inet6Address):SockAddr6() {
          val value = bytes[index].toInt() and 0xff
          sin6_addr[index].set(value)
       }
-      sin_scope_id.set(8) // Set interface to en0
+      sin6_scope_id.set(getScopeId("fe80::894:32d4:b10c:2b96%en0")) // Set interface to en0
    }
 }
 
@@ -101,12 +102,22 @@ class LinuxSockAddr4(address:Inet4Address) : SockAddr() {
    }
 }
 
+class SockAddrIn6:Struct(runtime) {
+   val sin6_len = Unsigned8()
+   val sin6_family = Unsigned16()
+   val sin6_port = Unsigned16()
+   val sin6_flowinfo = Unsigned32()
+   val sin6_addr:Array<out Unsigned8> = array(Array(16, {Unsigned8()}))
+   val sin6_scope_id = Unsigned32()
+}
+
 class LinuxSockAddr6:SockAddr6() {
-   @field:JvmField val sin_family = Unsigned16()
-   @field:JvmField val sin_port = Unsigned16()
-   @field:JvmField val flowinfo = Unsigned32()
-   @field:JvmField val sin_addr:Array<out Unsigned8> = array(Array(16, {Unsigned8()}))
-   @field:JvmField val sin_scope_id = Unsigned32()
+   @field:JvmField val sin6_len = Unsigned8()
+   @field:JvmField val sin6_family = Unsigned16()
+   @field:JvmField val sin6_port = Unsigned16()
+   @field:JvmField val sin6_flowinfo = Unsigned32()
+   @field:JvmField val sin6_addr:Array<out Unsigned8> = array(Array(16, {Unsigned8()}))
+   @field:JvmField val sin6_scope_id = Unsigned32()
 }
 
 const val ICMP_MINLEN = 8
@@ -163,6 +174,10 @@ interface LibC {
    @ssize_t fun read(fd:Int, @Out data:ByteArray, @size_t size:Long) : Int
 
    @ssize_t fun write(fd:Int, @In data:ByteArray, @size_t size:Long) : Int
+
+   // todo annotate resonse res with @out?
+//   fun getaddrinfo(@In node:String, @In service:String?, @In hints:AddrInfo, res:AddrInfo): Int
+   fun getaddrinfo(node:String, service:String?, hints:AddrInfo, res:AddrInfo): Int
 }
 
 fun htons(s:Short) = java.lang.Short.reverseBytes(s)
@@ -366,6 +381,30 @@ class Icmp6:Struct(runtime) {
    // } icmp6_dataun;
 }
 
+class AddrInfo:Struct(runtime) {
+   val ai_flags = Signed32()
+   val ai_family = Unsigned32()
+   val ai_socktype = Signed32()
+   val ai_protocol = Unsigned32()
+   val ai_addrlen = Unsigned64()
+   val ai_canonname = Pointer()
+   val sockaddr = Pointer()
+   val addrinfo = Pointer()
+}
+
+/*
+struct addrinfo {
+   int	ai_flags;	/* AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST */
+   int	ai_family;	/* PF_xxx */
+   int	ai_socktype;	/* SOCK_xxx */
+   int	ai_protocol;	/* 0 or IPPROTO_xxx for IPv4 and IPv6 */
+   socklen_t ai_addrlen;	/* length of ai_addr */
+   char	*ai_canonname;	/* canonical name for hostname */
+   struct	sockaddr *ai_addr;	/* binary address */
+   struct	addrinfo *ai_next;	/* next structure in linked list */
+};
+*/
+
 //union {
 class Icmp6UnData:Union(runtime) {
    // u_int32_t icmp6_un_data32[1]; /* type-specific field */
@@ -397,4 +436,45 @@ fun icmpCksum(buf:Pointer, len:Int) : Int {
    sum = (sum shr 16) + (sum and 0xffff)
    sum += (sum shr 16)
    return (sum.inv() and 0xffff)
+}
+
+fun getScopeId(address: String): Long {
+   val response = AddrInfo()
+   val hints = AddrInfo()
+
+   hints.ai_family.set(PF_INET6)
+   hints.ai_socktype.set(SOCK_DGRAM)
+
+   val result = libc.getaddrinfo("fe80::1879:233:6c1d:ec2d%en0", null, hints, response);
+
+   println(result)
+   println("response size " + Struct.size(response))
+   println("ai_flags offset " + response.ai_flags.offset())
+   println("ai_family offset " + response.ai_family.offset())
+   println("ai_socktype offset " + response.ai_socktype.offset())
+   println("ai_protocol offset " + response.ai_protocol.offset())
+   println("ai_addrlen offset " + response.ai_addrlen.offset())
+   println("ai_canonname offset " + response.ai_canonname.offset())
+   println("sockaddr offset " + response.sockaddr.offset())
+
+   println("AI flags: ${response.ai_flags}")
+   println("AI Family: ${response.ai_family}")
+   println("AI sock type: ${response.ai_socktype}")
+   println("AI protocol: ${response.ai_protocol}")
+   println("AI addrlen: ${response.ai_addrlen}")
+
+   val resultAddress = SockAddrIn6()
+   resultAddress.useMemory(response.sockaddr.get())
+
+   println("sin_len " + resultAddress.sin6_len)
+   println("sin6_family " + resultAddress.sin6_family)
+   println("sin6_port " + resultAddress.sin6_port)
+   println("sin_len " + resultAddress.sin6_flowinfo)
+   println("sin6_addr " + resultAddress.sin6_addr)
+   println("sin_scope_id " + resultAddress.sin6_scope_id)
+//   println("AI canonname: ${response.ai_canonname}")
+//   println("AI sockaddr: ${response.sockaddr}")
+
+
+   return 8;
 }

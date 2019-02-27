@@ -7,6 +7,7 @@ import jnr.ffi.Struct
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.concurrent.Semaphore
@@ -73,26 +74,26 @@ class PingTest {
       selectorThread.isDaemon = false
       selectorThread.start()
 
-      val pingTargets = arrayOf(
-         PingTarget(InetAddress.getByName("8.8.8.8")),
-         PingTarget(InetAddress.getByName("youtube.com")),
-         PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b"))
-      )
+//      val pingTargets = arrayOf(
+//         PingTarget(InetAddress.getByName("8.8.8.8")),
+//         PingTarget(InetAddress.getByName("youtube.com")),
+//         PingTarget(InetAddress.getByName("fe80::1879:233:6c1d:ec2d"))
+//      )
 
 //      pinger.ping(PingTarget(InetAddress.getByName("8.8.8.8")))
 //      pinger.ping(PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b")))
-//      pinger.ping(PingTarget(InetAddress.getByName("2001:4860:4860::8888")))
+      pinger.ping(PingTarget(InetAddress.getByName("fe80::894:32d4:b10c:2b96")))
 
-      for (i in 0..(10 * pingTargets.size)) {
-         if (!semaphore.tryAcquire()) {
-            println("$i: Blocking on semaphore.acquire()")
-            semaphore.acquire()
-
-            // TimeUnit.MILLISECONDS.sleep(30)
-         }
-         println("$i: Calling pinger.ping(${pingTargets[i % pingTargets.size].inetAddress})")
-         pinger.ping(pingTargets[i % pingTargets.size])
-      }
+//      for (i in 0..(10 * pingTargets.size)) {
+//         if (!semaphore.tryAcquire()) {
+//            println("$i: Blocking on semaphore.acquire()")
+//            semaphore.acquire()
+//
+//            // TimeUnit.MILLISECONDS.sleep(30)
+//         }
+//         println("$i: Calling pinger.ping(${pingTargets[i % pingTargets.size].inetAddress})")
+//         pinger.ping(pingTargets[i % pingTargets.size])
+//      }
 
       while (pinger.isPendingWork()) Thread.sleep(500)
 
