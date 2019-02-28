@@ -25,12 +25,16 @@ package com.zaxxer.ping.impl
 import com.zaxxer.ping.impl.NativeStatic.Companion.isBSD
 import com.zaxxer.ping.impl.NativeStatic.Companion.libc
 import com.zaxxer.ping.impl.NativeStatic.Companion.runtime
+import com.zaxxer.ping.impl.util.dump
+import com.zaxxer.ping.impl.util.dumpBuffer
 import jnr.constants.platform.AddressFamily.AF_INET
 import jnr.constants.platform.AddressFamily.AF_INET6
 import jnr.ffi.*
 import jnr.ffi.annotations.In
 import jnr.ffi.annotations.Out
 import jnr.ffi.byref.IntByReference
+import jnr.ffi.byref.PointerByReference
+import jnr.ffi.provider.jffi.ArrayMemoryIO
 import jnr.ffi.types.size_t
 import jnr.ffi.types.socklen_t
 import jnr.ffi.types.ssize_t
@@ -104,7 +108,7 @@ class LinuxSockAddr4(address:Inet4Address) : SockAddr() {
 
 class SockAddrIn6:Struct(runtime) {
    val sin6_len = Unsigned8()
-   val sin6_family = Unsigned16()
+   val sin6_family = Unsigned8()
    val sin6_port = Unsigned16()
    val sin6_flowinfo = Unsigned32()
    val sin6_addr:Array<out Unsigned8> = array(Array(16, {Unsigned8()}))
@@ -177,7 +181,7 @@ interface LibC {
 
    // todo annotate resonse res with @out?
 //   fun getaddrinfo(@In node:String, @In service:String?, @In hints:AddrInfo, res:AddrInfo): Int
-   fun getaddrinfo(node:String, service:String?, hints:AddrInfo, res:AddrInfo): Int
+   fun getaddrinfo(@In node:String, @In service:String?,@In hints:AddrInfo, @Out res:PointerByReference): Int
 }
 
 fun htons(s:Short) = java.lang.Short.reverseBytes(s)
@@ -383,11 +387,11 @@ class Icmp6:Struct(runtime) {
 
 class AddrInfo:Struct(runtime) {
    val ai_flags = Signed32()
-   val ai_family = Unsigned32()
+   val ai_family = Signed32()
    val ai_socktype = Signed32()
-   val ai_protocol = Unsigned32()
+   val ai_protocol = Signed32()
    val ai_addrlen = Unsigned64()
-   val ai_canonname = Pointer()
+   val ai_canonname = Unsigned32()
    val sockaddr = Pointer()
    val addrinfo = Pointer()
 }
@@ -439,25 +443,37 @@ fun icmpCksum(buf:Pointer, len:Int) : Int {
 }
 
 fun getScopeId(address: String): Long {
+   val buffer = ByteBuffer.allocateDirect(48)
+   val resPointer = PointerByReference()
+
    val response = AddrInfo()
    val hints = AddrInfo()
 
    hints.ai_family.set(PF_INET6)
    hints.ai_socktype.set(SOCK_DGRAM)
 
-   val result = libc.getaddrinfo("fe80::1879:233:6c1d:ec2d%en0", null, hints, response);
+   val result = libc.getaddrinfo("fe80::1879:233:6c1d:ec2d%en0", null, hints, resPointer);
+
+   response.useMemory(resPointer.value)
+//   println(dumpStruct(hints, 48))
+   println(dumpBuffer("response", buffer, 0))
+
+   println("\nhints ai_family ${hints.ai_family}")
+   println("hints ai_socktype ${hints.ai_socktype}\n")
 
    println(result)
-   println("response size " + Struct.size(response))
-   println("ai_flags offset " + response.ai_flags.offset())
-   println("ai_family offset " + response.ai_family.offset())
-   println("ai_socktype offset " + response.ai_socktype.offset())
-   println("ai_protocol offset " + response.ai_protocol.offset())
-   println("ai_addrlen offset " + response.ai_addrlen.offset())
-   println("ai_canonname offset " + response.ai_canonname.offset())
-   println("sockaddr offset " + response.sockaddr.offset())
+   println("response size ${Struct.size(response)}\n")
 
-   println("AI flags: ${response.ai_flags}")
+   println("ai_flags offset ${response.ai_flags.offset()}")
+   println("ai_family offset ${response.ai_family.offset()}")
+   println("ai_socktype offset ${response.ai_socktype.offset()}")
+   println("ai_protocol offset ${response.ai_protocol.offset()}")
+   println("ai_addrlen offset ${response.ai_addrlen.offset()}")
+   println("ai_canonname offset ${response.ai_canonname.offset()}")
+   println("sockaddr offset ${response.sockaddr.offset()}")
+   println("addr info offset ${response.addrinfo.offset()}\n")
+
+   println("\nAI flags: ${response.ai_flags}")
    println("AI Family: ${response.ai_family}")
    println("AI sock type: ${response.ai_socktype}")
    println("AI protocol: ${response.ai_protocol}")
@@ -466,15 +482,22 @@ fun getScopeId(address: String): Long {
    val resultAddress = SockAddrIn6()
    resultAddress.useMemory(response.sockaddr.get())
 
-   println("sin_len " + resultAddress.sin6_len)
-   println("sin6_family " + resultAddress.sin6_family)
-   println("sin6_port " + resultAddress.sin6_port)
-   println("sin_len " + resultAddress.sin6_flowinfo)
-   println("sin6_addr " + resultAddress.sin6_addr)
-   println("sin_scope_id " + resultAddress.sin6_scope_id)
+   println("\nsin_len ${resultAddress.sin6_len}")
+   println("sin6_family ${resultAddress.sin6_family}")
+   println("sin6_port ${resultAddress.sin6_port}")
+   println("sin6_flowinfo ${resultAddress.sin6_flowinfo}")
+   println("sin6_addr ${resultAddress.sin6_addr}")
+   println("sin_scope_id ${resultAddress.sin6_scope_id}\n")
 //   println("AI canonname: ${response.ai_canonname}")
 //   println("AI sockaddr: ${response.sockaddr}")
 
 
    return 8;
+}
+
+private fun dumpStruct(hints: AddrInfo, length: Int) {
+   val arrayMemory = Struct.getMemory(hints) as ArrayMemoryIO
+   val valueArray = arrayMemory.array()
+
+   println(dump(0, valueArray, 0, length))
 }
