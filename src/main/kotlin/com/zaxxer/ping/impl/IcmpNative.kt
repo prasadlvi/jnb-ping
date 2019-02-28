@@ -458,22 +458,6 @@ fun getScopeId(address: String): Long {
    val result = libc.getaddrinfo("fe80::1879:233:6c1d:ec2d%en0", null, hints, resPointer);
 
    response.useMemory(resPointer.value)
-//   println(dumpStruct(response, 48))
-
-   println("\nhints ai_family ${hints.ai_family}")
-   println("hints ai_socktype ${hints.ai_socktype}\n")
-
-   println(result)
-   println("response size ${Struct.size(response)}\n")
-
-   println("ai_flags offset ${response.ai_flags.offset()}")
-   println("ai_family offset ${response.ai_family.offset()}")
-   println("ai_socktype offset ${response.ai_socktype.offset()}")
-   println("ai_protocol offset ${response.ai_protocol.offset()}")
-   println("ai_addrlen offset ${response.ai_addrlen.offset()}")
-   println("ai_canonname offset ${response.ai_canonname.offset()}")
-   println("sockaddr offset ${response.sockaddr.offset()}")
-   println("addr info offset ${response.addrinfo.offset()}\n")
 
    println("\nAI flags: ${response.ai_flags}")
    println("AI Family: ${response.ai_family}")
@@ -483,8 +467,6 @@ fun getScopeId(address: String): Long {
 
    val resultAddress = SockAddrIn6()
    resultAddress.useMemory(response.sockaddr.get())
-//   println(dumpStruct(resultAddress., 48))
-
    println("\nsin6_len ${resultAddress.sin6_len}")
    println("sin6_family ${resultAddress.sin6_family}")
    println("sin6_port ${resultAddress.sin6_port}")
@@ -492,20 +474,7 @@ fun getScopeId(address: String): Long {
    println("sin6_addr ${resultAddress.sin6_addr}")
    println("sin6_scope_id ${resultAddress.sin6_scope_id}\n")
 
-   println("\nsin6_len offset ${resultAddress.sin6_len.offset()}")
-   println("sin6_family offset ${resultAddress.sin6_family.offset()}")
-   println("sin6_port offset ${resultAddress.sin6_port.offset()}")
-   println("sin6_flowinfo offset ${resultAddress.sin6_flowinfo.offset()}")
-//   println("sin6_addr offset ${resultAddress.sin6_addr.offset()}")
-   println("sin6_scope_id offset ${resultAddress.sin6_scope_id.offset()}")
-
-
-
-//   println("AI canonname: ${response.ai_canonname}")
-//   println("AI sockaddr: ${response.sockaddr}")
-
-
-   return 8;
+   return resultAddress.sin6_scope_id.get()
 }
 
 private fun dumpStruct(hints: Struct, length: Int) {
