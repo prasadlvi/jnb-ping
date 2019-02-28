@@ -111,7 +111,7 @@ class SockAddrIn6:Struct(runtime) {
    val sin6_family = Unsigned8()
    val sin6_port = Unsigned16()
    val sin6_flowinfo = Unsigned32()
-   val sin6_addr:Array<out Unsigned8> = array(Array(16, {Unsigned8()}))
+   val sin6_addr:Array<out Unsigned8> = Array(16, {Unsigned8()})
    val sin6_scope_id = Unsigned32()
 }
 
@@ -455,8 +455,7 @@ fun getScopeId(address: String): Long {
    val result = libc.getaddrinfo("fe80::1879:233:6c1d:ec2d%en0", null, hints, resPointer);
 
    response.useMemory(resPointer.value)
-//   println(dumpStruct(hints, 48))
-   println(dumpBuffer("response", buffer, 0))
+//   println(dumpStruct(response, 48))
 
    println("\nhints ai_family ${hints.ai_family}")
    println("hints ai_socktype ${hints.ai_socktype}\n")
@@ -481,13 +480,24 @@ fun getScopeId(address: String): Long {
 
    val resultAddress = SockAddrIn6()
    resultAddress.useMemory(response.sockaddr.get())
+//   println(dumpStruct(resultAddress., 48))
 
-   println("\nsin_len ${resultAddress.sin6_len}")
+   println("\nsin6_len ${resultAddress.sin6_len}")
    println("sin6_family ${resultAddress.sin6_family}")
    println("sin6_port ${resultAddress.sin6_port}")
    println("sin6_flowinfo ${resultAddress.sin6_flowinfo}")
    println("sin6_addr ${resultAddress.sin6_addr}")
-   println("sin_scope_id ${resultAddress.sin6_scope_id}\n")
+   println("sin6_scope_id ${resultAddress.sin6_scope_id}\n")
+
+   println("\nsin6_len offset ${resultAddress.sin6_len.offset()}")
+   println("sin6_family offset ${resultAddress.sin6_family.offset()}")
+   println("sin6_port offset ${resultAddress.sin6_port.offset()}")
+   println("sin6_flowinfo offset ${resultAddress.sin6_flowinfo.offset()}")
+//   println("sin6_addr offset ${resultAddress.sin6_addr.offset()}")
+   println("sin6_scope_id offset ${resultAddress.sin6_scope_id.offset()}")
+
+
+
 //   println("AI canonname: ${response.ai_canonname}")
 //   println("AI sockaddr: ${response.sockaddr}")
 
@@ -495,7 +505,7 @@ fun getScopeId(address: String): Long {
    return 8;
 }
 
-private fun dumpStruct(hints: AddrInfo, length: Int) {
+private fun dumpStruct(hints: Struct, length: Int) {
    val arrayMemory = Struct.getMemory(hints) as ArrayMemoryIO
    val valueArray = arrayMemory.array()
 
