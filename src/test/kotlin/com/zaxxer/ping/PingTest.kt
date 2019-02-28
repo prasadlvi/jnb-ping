@@ -9,6 +9,7 @@ import org.junit.Test
 import java.io.IOException
 import java.net.Inet6Address
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.nio.ByteBuffer
 import java.util.concurrent.Semaphore
 
@@ -56,7 +57,7 @@ class PingTest {
 
       class PingHandler : PingResponseHandler {
          override fun onResponse(pingTarget : PingTarget, responseTimeSec : Double, byteCount : Int, seq : Int) {
-            System.out.printf("  ${Thread.currentThread()} $byteCount bytes from $pingTarget: icmp_seq=$seq time=%1.6f\n", responseTimeSec)
+            System.out.printf("  ${Thread.currentThread()} $byteCount bytes from ${pingTarget.toString().replace("%", "%%")}: icmp_seq=$seq time=%1.6f\n", responseTimeSec)
 
             println("  ${Thread.currentThread()} Calling semaphore.release()\n")
             semaphore.release()
@@ -82,7 +83,13 @@ class PingTest {
 
 //      pinger.ping(PingTarget(InetAddress.getByName("8.8.8.8")))
 //      pinger.ping(PingTarget(InetAddress.getByName("fe80::1035:a68:335d:895b")))
-      pinger.ping(PingTarget(InetAddress.getByName("fe80::894:32d4:b10c:2b96")))
+       pinger.ping(PingTarget(InetAddress.getByName("fe80::894:32d4:b10c:2b96%en0")))
+      val addr = InetAddress.getByName("fe80::894:32d4:b10c:2b96%en0")
+//      val address = Inet6Address.getByAddress(null, addr.address, NetworkInterface.getByName("en0"))
+
+//      println(PingTarget(addr))
+//      pinger.ping(PingTarget(addr))
+
 
 //      for (i in 0..(10 * pingTargets.size)) {
 //         if (!semaphore.tryAcquire()) {

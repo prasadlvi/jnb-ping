@@ -88,7 +88,10 @@ class BSDSockAddr6(address: Inet6Address):SockAddr6() {
          val value = bytes[index].toInt() and 0xff
          sin6_addr[index].set(value)
       }
-      sin6_scope_id.set(getScopeId("fe80::894:32d4:b10c:2b96%en0")) // Set interface to en0
+
+      if(address.isLinkLocalAddress) {
+         sin6_scope_id.set(address.scopeId)
+      }
    }
 }
 
