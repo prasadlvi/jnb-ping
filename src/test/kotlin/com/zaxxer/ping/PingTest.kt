@@ -4,8 +4,7 @@ import com.zaxxer.ping.impl.*
 import com.zaxxer.ping.impl.util.dumpBuffer
 import jnr.ffi.Platform
 import jnr.ffi.Struct
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 import java.io.BufferedReader
 import java.io.IOException
@@ -159,7 +158,9 @@ class PingTest {
       if (isBSD) {
          pingTargets.add(PingTarget(InetAddress.getByName("2001:4860:4860::8888")))
       } else {
-         pingTargets.add(PingTarget(InetAddress.getByName(getIpv6Address())))
+         val address = getIpv6Address()
+         assertNotNull("IPv6 is not configured properly.", address)
+         pingTargets.add(PingTarget(address!!))
       }
 
       for (i in 0..(10 * pingTargets.size)) {
@@ -213,10 +214,11 @@ class PingTest {
       assertTrue("Ping didn't timeout as expected.", timedOut)
    }
 
-   private fun getIpv6Address() : String {
+   private fun getIpv6Address() : InetAddress? {
       val proc = Runtime.getRuntime().exec("hostname -i")
       val stdInput = BufferedReader(InputStreamReader(proc.inputStream))
-      return stdInput.readLine().split(" ")[0]
+      val address = stdInput.readLine().split(" ")[0]
+      return InetAddress.getByName(address) as? Inet6Address ?: return null
    }
 
 }
