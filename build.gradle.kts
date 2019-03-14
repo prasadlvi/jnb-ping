@@ -15,6 +15,9 @@ plugins {
 	maven
 	`maven-publish`
 	signing
+    application
+	id("com.github.johnrengelman.shadow") version "4.0.3"
+
 	// id("com.github.ben-manes.versions") version "0.20.0"
 }
 
@@ -116,6 +119,10 @@ val sourcesJar by tasks.creating(Jar::class) {
 val testsJar by tasks.creating(Jar::class) {
 	classifier = "tests"
 	from(sourceSets["test"].allSource)
+}
+
+application {
+    mainClassName = "com.zaxxer.ping.MainKt"
 }
 
 publishing {

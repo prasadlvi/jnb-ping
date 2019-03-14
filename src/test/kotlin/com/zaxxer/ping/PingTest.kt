@@ -215,9 +215,12 @@ class PingTest {
    }
 
    private fun getIpv6Address() : InetAddress? {
-      val proc = Runtime.getRuntime().exec("hostname -i")
+      val proc = Runtime.getRuntime().exec("ip -6 addr show")
       val stdInput = BufferedReader(InputStreamReader(proc.inputStream))
-      val address = stdInput.readLine().split(" ")[0]
+      val addressOptional = stdInput.lines().filter { it.contains("inet6") && !it.contains("::1/128") }.findFirst()
+      val address = if (addressOptional.isPresent) {
+         addressOptional.get().trim().split(" ")[1]
+      } else null
       return InetAddress.getByName(address) as? Inet6Address ?: return null
    }
 
