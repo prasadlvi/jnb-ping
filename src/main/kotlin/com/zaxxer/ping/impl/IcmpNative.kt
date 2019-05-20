@@ -198,14 +198,14 @@ fun htonl(value:Long) : Long {
 // #define __DARWIN_NFDBITS      (sizeof(__int32_t) * __DARWIN_NBBY) /* bits per mask */
 //
 // --> __DARWIN_NFDBITS = 4 * 8 = 32
-// --> __DARWIN_howmany = __DARWIN_FD_SETSIZE / __DARWIN_NFDBITS = 1024 / 32 = 32
+// --> __DARWIN_howmany = __DARWIN_FD_SETSIZE / __DARWIN_NFDBITS = 1024 / 64 = 16
 //
 // typedef struct fd_set {
 //    __int32_t  fds_bits[__DARWIN_howmany(__DARWIN_FD_SETSIZE, __DARWIN_NFDBITS)];
 // } fd_set;
 class Fd_set:Struct(runtime) {
 
-   @field:JvmField val fds_bits:Array<out Signed32> = Array(32, { Signed32() })
+   @field:JvmField val fds_bits:Array<out Signed32> = Array(16, { Signed32() })
 
    init {
       val memory = this.runtime.memoryManager.allocateDirect(size(this))
@@ -217,18 +217,18 @@ val SIZEOF_FD_SET = Struct.size(Fd_set()).toLong()
 
 fun FD_SET(fd:Int, fd_set:Fd_set) {
    // ((fd_set*)->fds_bits[ (unsigned long)__fd / 32 ] |= ((__int32_t) (((unsigned long) 1) << ((unsigned long) __fd % 32))))
-   val ndx = fd / 32
+   val ndx = fd / 64
    val currvalue = fd_set.fds_bits[ndx].get()
-   val orValue = (1L shl (fd % 32)).toInt()
+   val orValue = (1L shl (fd % 64)).toInt()
    val newValue = currvalue or orValue
    fd_set.fds_bits[ndx].set(newValue)
 }
 
 fun FD_ISSET(fd:Int, fd_set:Fd_set) : Boolean {
    // return (_p->fds_bits[(unsigned long)_n/__DARWIN_NFDBITS] & ((__int32_t)(((unsigned long)1)<<((unsigned long)_n % __DARWIN_NFDBITS))))
-   val ndx = fd / 32
+   val ndx = fd / 64
    val currvalue = fd_set.fds_bits[ndx].get()
-   val andValue = (1L shl (fd % 32)).toInt()
+   val andValue = (1L shl (fd % 64)).toInt()
 
    return currvalue and andValue != 0
 }
